@@ -1,9 +1,8 @@
-import { api, internal } from "./_generated/api";
-
 import { Webhook } from "svix";
 import type { WebhookEvent } from "@clerk/nextjs/server";
 import { httpAction } from "./_generated/server";
 import { httpRouter } from "convex/server";
+import { internal } from "./_generated/api";
 
 const http = httpRouter();
 
@@ -31,14 +30,13 @@ async function verifyClerkWebhookRequest(
 		throw new Error("Missing Svix headers");
 	}
 
-	// const secret = process.env.CLERK_WEBHOOK_SECRET;
-	// if (!secret) {
-	// 	throw new Error("Missing CLERK_WEBHOOK_SECRET");
-	// }
+	const secret = process.env.CLERK_WEBHOOK_SECRET;
+	if (!secret) {
+		throw new Error("Missing CLERK_WEBHOOK_SECRET");
+	}
 
 	const payload = await request.text();
-	//const webhook = new Webhook(secret);
-	const webhook = new Webhook();
+	const webhook = new Webhook(secret);
 
 	const event = webhook.verify(payload, {
 		"svix-id": headers.svixId,
