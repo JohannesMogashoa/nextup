@@ -2,6 +2,7 @@ import "./globals.css";
 
 import { Geist, Geist_Mono } from "next/font/google";
 
+import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import type { Metadata } from "next";
 import { Providers } from "./providers";
@@ -18,8 +19,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-	title: "My Next.js App",
-	description: "A Next.js application with Convex and Clerk integration.",
+	title: "NextUP - Modern Queue Management System",
+	description:
+		"Transform customer experience with digital queue management. Eliminate wait time frustration and streamline your business operations.",
 	generator: "next-clerk-convex-starter",
 	icons: {
 		icon: [
@@ -46,13 +48,14 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en">
+		<html lang="en" data-theme="dark" style={{ colorScheme: "dark" }}>
 			<body
 				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
 			>
 				<Providers>
 					<Header />
 					{children}
+					<Footer />
 				</Providers>
 			</body>
 		</html>

@@ -1,4 +1,9 @@
-import { internalMutation, mutation, query } from "./_generated/server";
+import {
+	internalMutation,
+	internalQuery,
+	mutation,
+	query,
+} from "./_generated/server";
 
 import { v } from "convex/values";
 
@@ -26,6 +31,18 @@ export const createUser = mutation({
 			imageUrl: args.imageUrl,
 			createdAt: Date.now(),
 		});
+	},
+});
+
+export const getAuthUserId = internalQuery({
+	args: { clerkId: v.string() },
+	handler: async (ctx, args) => {
+		const user = await ctx.db
+			.query("users")
+			.withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+			.first();
+
+		return user ? user._id : null;
 	},
 });
 

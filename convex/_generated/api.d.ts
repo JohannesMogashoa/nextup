@@ -8,7 +8,9 @@
  * @module
  */
 
+import type * as businesses from "../businesses.js";
 import type * as http from "../http.js";
+import type * as queues from "../queues.js";
 import type * as users from "../users.js";
 
 import type {
@@ -18,7 +20,9 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  businesses: typeof businesses;
   http: typeof http;
+  queues: typeof queues;
   users: typeof users;
 }>;
 

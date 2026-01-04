@@ -1,26 +1,46 @@
-import { FolderOpen } from "lucide-react";
-import { UserButton } from "./user-button";
+import { Authenticated, Unauthenticated } from "convex/react";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { SignInButton, SignedIn, SignedOut, UserAvatar } from "@clerk/nextjs";
+
+import { Button } from "@/components/ui/button";
+import { Clock } from "lucide-react";
+import Link from "next/link";
 
 export function Header() {
 	return (
-		<header className="border-b border-border bg-card">
-			<div className="flex h-16 items-center justify-between px-6">
-				<div className="flex items-center gap-4">
-					<div className="flex items-center gap-3">
-						<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-							<FolderOpen className="h-5 w-5 text-primary-foreground" />
-						</div>
-						<div>
-							<h1 className="text-lg font-semibold text-foreground">
-								My NextJS APP
-							</h1>
-							<p className="text-xs text-muted-foreground">
-								My App
-							</p>
-						</div>
+		<header className="sticky top-0 p-3 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+			<div className="flex items-center justify-between">
+				<Link href="/" className="flex items-center gap-2">
+					<div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
+						<Clock className="h-5 w-5 text-primary-foreground" />
 					</div>
-				</div>
-				<UserButton />
+					<span className="text-xl font-semibold">Next UP</span>
+				</Link>
+
+				<SignedIn>
+					<DropdownMenu>
+						<DropdownMenuTrigger>
+							<UserAvatar />
+						</DropdownMenuTrigger>
+						<DropdownMenuContent>
+							<DropdownMenuLabel>My Account</DropdownMenuLabel>
+							<DropdownMenuSeparator />
+							<DropdownMenuItem>Profile</DropdownMenuItem>
+							<DropdownMenuItem>My Businesses</DropdownMenuItem>
+							<DropdownMenuItem>My Queues</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</SignedIn>
+				<SignedOut>
+					<SignInButton />
+				</SignedOut>
 			</div>
 		</header>
 	);
