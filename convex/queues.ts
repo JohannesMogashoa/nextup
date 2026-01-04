@@ -1,7 +1,37 @@
+import { api, internal } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
 
-import { internal } from "./_generated/api";
+import { Doc } from "./_generated/dataModel";
 import { v } from "convex/values";
+
+export const getUserQueues = query({
+	args: {
+		userId: v.string(),
+	},
+	handler: async (ctx, args) => {
+		const queuesEntry = await ctx.db
+			.query("queue_entries")
+			.filter(
+				(q) =>
+					q.eq(q.field("userId"), args.userId) &&
+					q.eq(q.field("status"), "waiting")
+			)
+			.collect();
+
+		const queues = await Promise.all(
+			queuesEntry.map(async (entry) => {
+				const queue = await ctx.db
+					.query("queues")
+					.withIndex("by_id", (q) => q.eq("_id", entry.queueId))
+					.first();
+				if (!queue) throw new Error("Queue not found");
+				return queue;
+			})
+		);
+
+		return queues;
+	},
+});
 
 export const getByBusiness = query({
 	args: { businessId: v.id("businesses") },
@@ -49,17 +79,28 @@ export const getQueueWithEntries = query({
 export const joinQueue = mutation({
 	args: {
 		queueId: v.id("queues"),
-		customerName: v.string(),
+		userId: v.string(),
 		customerPhone: v.string(),
 	},
 	handler: async (ctx, args) => {
+		const user = (await ctx.runQuery(api.users.getUserByClerkId, {
+			clerkId: args.userId,
+		})) as Doc<"users"> | null;
+
+		if (!user) {
+			throw new Error("User not found");
+		}
+
+		const queue = await ctx.db.get(args.queueId);
+		if (!queue) throw new Error("Queue not found");
+
 		// Check if customer is already in queue
 		const existingEntry = await ctx.db
 			.query("queue_entries")
 			.withIndex("by_queue", (q) => q.eq("queueId", args.queueId))
 			.filter((q) =>
 				q.and(
-					q.eq(q.field("customerPhone"), args.customerPhone),
+					q.eq(q.field("userId"), user._id),
 					q.or(
 						q.eq(q.field("status"), "waiting"),
 						q.eq(q.field("status"), "being_served")
@@ -82,23 +123,21 @@ export const joinQueue = mutation({
 
 		const position = currentEntries.length + 1;
 
-		// Get business info for wait time calculation
-		const queue = await ctx.db.get(args.queueId);
-		if (!queue) throw new Error("Queue not found");
+		if (position > queue.maxCapacity) {
+			throw new Error("Queue is at maximum capacity");
+		}
 
-		const business = await ctx.db.get(queue.businessId);
-		if (!business) throw new Error("Business not found");
-
-		const estimatedWaitTime = position * business.averageServiceTime;
+		const estimatedWaitTime = position * queue.averageServiceTime;
 
 		return await ctx.db.insert("queue_entries", {
 			queueId: args.queueId,
-			customerName: args.customerName,
+			userId: user._id,
+			customerName: user.name || `Guest ${user._id.split("_")[1]}`,
 			customerPhone: args.customerPhone,
 			position,
 			status: "waiting",
-			estimatedWaitTime,
 			joinedAt: Date.now(),
+			estimatedWaitTime,
 		});
 	},
 });
@@ -117,11 +156,6 @@ export const callNext = mutation({
 		// Verify user owns this queue's business
 		const queue = await ctx.db.get(args.queueId);
 		if (!queue) throw new Error("Queue not found");
-
-		const business = await ctx.db.get(queue.businessId);
-		if (!business || business.ownerId !== userId) {
-			throw new Error("Unauthorized");
-		}
 
 		// Get next person in queue
 		const nextEntry = await ctx.db
@@ -169,11 +203,6 @@ export const completeService = mutation({
 		const queue = await ctx.db.get(entry.queueId);
 		if (!queue) throw new Error("Queue not found");
 
-		const business = await ctx.db.get(queue.businessId);
-		if (!business || business.ownerId !== userId) {
-			throw new Error("Unauthorized");
-		}
-
 		await ctx.db.patch(args.entryId, {
 			status: "completed",
 			completedAt: Date.now(),
@@ -207,11 +236,6 @@ export const markNoShow = mutation({
 		// Verify ownership
 		const queue = await ctx.db.get(entry.queueId);
 		if (!queue) throw new Error("Queue not found");
-
-		const business = await ctx.db.get(queue.businessId);
-		if (!business || business.ownerId !== userId) {
-			throw new Error("Unauthorized");
-		}
 
 		await ctx.db.patch(args.entryId, {
 			status: "no_show",

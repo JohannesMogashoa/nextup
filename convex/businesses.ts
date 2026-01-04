@@ -1,3 +1,4 @@
+import { Doc, Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 
 import { internal } from "./_generated/api";
@@ -16,6 +17,7 @@ export const create = mutation({
 		address: v.string(),
 		phone: v.string(),
 		averageServiceTime: v.number(),
+		isByInviteOnly: v.boolean(),
 		userId: v.string(),
 	},
 	handler: async (ctx, args) => {
@@ -27,32 +29,34 @@ export const create = mutation({
 			throw new Error("Owner user not found");
 		}
 
-		const businessId = await ctx.db.insert("businesses", {
+		const businessId = (await ctx.db.insert("businesses", {
 			name: args.name,
 			description: args.description,
 			type: args.type,
 			address: args.address,
 			phone: args.phone,
-			averageServiceTime: args.averageServiceTime,
-			isActive: true,
-			isOpen: false,
 			createdAt: Date.now(),
 			ownerId: userId,
-		});
+			queues: [],
+		})) as Id<"businesses">;
 
 		// Create a default queue for the business
 		await ctx.db.insert("queues", {
-			businessId,
-			name: "Main Queue",
+			title: "Main Queue",
+			description: "Default queue for the business",
+			averageServiceTime: args.averageServiceTime,
 			isActive: true,
 			maxCapacity: 20,
+			isByInviteOnly: args.isByInviteOnly,
+			businessId,
+			ownerId: userId,
 		});
 
 		return businessId;
 	},
 });
 
-export const getMyBusiness = query({
+export const getMyBusinesses = query({
 	args: {
 		userId: v.string(),
 	},
@@ -62,15 +66,15 @@ export const getMyBusiness = query({
 		});
 
 		if (!userId) {
-			return null;
+			return [];
 		}
 
-		const business = await ctx.db
+		const businesses = (await ctx.db
 			.query("businesses")
 			.withIndex("by_owner", (q) => q.eq("ownerId", userId))
-			.first();
+			.collect()) as Doc<"businesses">[];
 
-		return business;
+		return businesses;
 	},
 });
 
@@ -86,7 +90,7 @@ export const list = query({
 	handler: async (ctx) => {
 		return await ctx.db
 			.query("businesses")
-			.filter((q) => q.eq(q.field("isActive"), true))
+			.filter((q) => q.gt(q.field("queues"), []))
 			.collect();
 	},
 });
@@ -94,10 +98,7 @@ export const list = query({
 export const listWithQueueCount = query({
 	args: {},
 	handler: async (ctx) => {
-		const businesses = await ctx.db
-			.query("businesses")
-			.filter((q) => q.eq(q.field("isActive"), true))
-			.collect();
+		const businesses = await ctx.db.query("businesses").collect();
 
 		const businessWithQueueCounts = await Promise.all(
 			businesses.map(async (business) => {
