@@ -50,6 +50,7 @@ export const create = mutation({
 			isByInviteOnly: args.isByInviteOnly,
 			businessId,
 			ownerId: userId,
+			createdAt: Date.now(),
 		});
 
 		return businessId;

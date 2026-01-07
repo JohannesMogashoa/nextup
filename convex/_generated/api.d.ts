@@ -11,6 +11,7 @@
 import type * as businesses from "../businesses.js";
 import type * as http from "../http.js";
 import type * as queues from "../queues.js";
+import type * as userQueues from "../userQueues.js";
 import type * as users from "../users.js";
 
 import type {
@@ -23,6 +24,7 @@ declare const fullApi: ApiFromModules<{
   businesses: typeof businesses;
   http: typeof http;
   queues: typeof queues;
+  userQueues: typeof userQueues;
   users: typeof users;
 }>;
 

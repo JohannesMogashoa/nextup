@@ -39,6 +39,7 @@ export default defineSchema({
 		isByInviteOnly: v.boolean(),
 		businessId: v.optional(v.id("businesses")),
 		ownerId: v.id("users"),
+		createdAt: v.number(),
 		currentServing: v.optional(v.id("queue_entries")),
 	})
 		.index("by_business", ["businessId"])

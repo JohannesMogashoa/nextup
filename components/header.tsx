@@ -1,4 +1,3 @@
-import { Authenticated, Unauthenticated } from "convex/react";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -9,7 +8,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SignInButton, SignedIn, SignedOut, UserAvatar } from "@clerk/nextjs";
 
-import { Button } from "@/components/ui/button";
 import { Clock } from "lucide-react";
 import Link from "next/link";
 
@@ -33,8 +31,16 @@ export function Header() {
 							<DropdownMenuLabel>My Account</DropdownMenuLabel>
 							<DropdownMenuSeparator />
 							<DropdownMenuItem>Profile</DropdownMenuItem>
-							<DropdownMenuItem>My Businesses</DropdownMenuItem>
-							<DropdownMenuItem>My Queues</DropdownMenuItem>
+							<DropdownMenuItem>
+								<Link href={"/dashboard/businesses"}>
+									My Businesses
+								</Link>
+							</DropdownMenuItem>
+							<DropdownMenuItem>
+								<Link href={"/dashboard/queues"}>
+									My Queues
+								</Link>
+							</DropdownMenuItem>
 						</DropdownMenuContent>
 					</DropdownMenu>
 				</SignedIn>

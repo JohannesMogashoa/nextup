@@ -1,8 +1,44 @@
+import { Doc, Id } from "./_generated/dataModel";
 import { api, internal } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
 
-import { Doc } from "./_generated/dataModel";
 import { v } from "convex/values";
+
+export const create = mutation({
+	args: {
+		title: v.string(),
+		description: v.string(),
+		businessId: v.optional(v.id("businesses")),
+		averageWaitTime: v.number(),
+		maxCapacity: v.number(),
+		isActive: v.boolean(),
+		isByInviteOnly: v.boolean(),
+		ownerId: v.string(),
+	},
+	handler: async (ctx, args) => {
+		const userId = (await ctx.runQuery(internal.users.getAuthUserId, {
+			clerkId: args.ownerId,
+		})) as Id<"users"> | null;
+
+		if (!userId) {
+			throw new Error("Owner user not found");
+		}
+
+		const queueId = await ctx.db.insert("queues", {
+			title: args.title,
+			description: args.description,
+			averageServiceTime: args.averageWaitTime,
+			isActive: args.isActive,
+			maxCapacity: args.maxCapacity,
+			isByInviteOnly: args.isByInviteOnly,
+			businessId: args.businessId,
+			ownerId: userId,
+			createdAt: Date.now(),
+		});
+
+		return queueId;
+	},
+});
 
 export const getUserQueues = query({
 	args: {

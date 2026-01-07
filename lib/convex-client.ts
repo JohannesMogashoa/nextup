@@ -46,4 +46,4 @@ import { env } from "@/env";
  * const project = await convex.query(api.projects.getProject, { projectId });
  * ```
  */
-export const convex = new ConvexHttpClient(env.NEXT_PUBLIC_CONVEX_URL || "");
+export const convex = new ConvexHttpClient(env.CONVEX_URL || "");
